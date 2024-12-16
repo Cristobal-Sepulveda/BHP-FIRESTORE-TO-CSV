@@ -1,32 +1,21 @@
 import { createTransport } from 'nodemailer'
 import firebaseAdmin from '../config/firebaseConfiguration.js'
-// import { writeFileSync } from 'node:fs'
-// import { join, dirname } from 'path'
-// import { fileURLToPath } from 'url'
-import zod from 'zod'
+import { writeFileSync } from 'node:fs'
+import { join, dirname } from 'path'
+import { fileURLToPath } from 'url'
+import { validateQuerySchema } from './schemas.js'
 
 const firestoreGCP = firebaseAdmin.firestore()
-// const __filename = fileURLToPath(import.meta.url)
-// const __dirname = dirname(__filename)
 
 async function generateAndSendCsv (req, res) {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  const dateRegex = /^(0[1-9]|1[0-2])-\d{4}$/
-
   try {
-    const { recipientEmail, date } = req.query
-    if (!recipientEmail) return res.status(400).send('El parámetro "email" es requerido.')
-    if (!emailRegex.test(recipientEmail)) return res.status(400).send('El formato del email es inválido.')
-
-    if (!date) return res.status(400).send('El parámetro "date" es requerido.')
-    if (!dateRegex.test(date)) return res.status(400).send('El formato de "date" es inválido. Use mm/yyyy.')
-    console.log(recipientEmail, date)
-    const csvRows = []
+    const { email, date } = req.query
+    const queryValidation = validateQuerySchema(req.query)
+    if (!queryValidation.success) return res.status(400).send(queryValidation.error)
     await prepareCsvRows(csvRows, date)
     const csvContent = convertToCsv(csvRows)
-    await sendEmail(recipientEmail, csvContent)
-    // const filePath = join(__dirname, 'reporte.csv')
-    // writeFileSync(filePath, csvContent, 'utf8')
+    await saveCSVInResources(csvContent)
+    await sendEmail(email, csvContent)
     res.status(200).send('Su reporte ha sido generado y enviado al email ingresado, porfavor, espere.')
   } catch (error) {
     console.log(`Server error: ${error}`)
@@ -35,6 +24,7 @@ async function generateAndSendCsv (req, res) {
 }
 
 async function prepareCsvRows (csvRows, date) {
+  const csvRows = []
   const collectionName = 'Users'
   const snapshot = await firestoreGCP.collection(collectionName).get()
   for (const doc of snapshot.docs) {
@@ -121,6 +111,13 @@ async function sendEmail (emailToReceiveTheReport, fileContent) {
       }
     })
   })
+}
+
+async function saveCSVInResources (csvContent) {
+  const __filename = fileURLToPath(import.meta.url)
+  const __dirname = dirname(__filename)
+  const filePath = join(__dirname, 'reporte.csv')
+  writeFileSync(filePath, csvContent, 'utf8')
 }
 
 export default generateAndSendCsv
