@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "s": "nodemon app.js",
+    "dev": "node --watch app.js",
     "gcpProd": "node app.js"
   },
   "author": "",
@@ -16,8 +16,15 @@
     "fast-csv": "^5.0.2",
     "firebase-admin": "^13.0.1",
     "fs": "^0.0.1-security",
-    "nodemailer": "^6.9.16",
-    "nodemon": "^3.1.7",
-    "path": "^0.12.7"
+    "nodemailer": "6.9.8",
+    "path": "^0.12.7",
+    "zod": "3.24.1"
+  },
+  "devDependencies": {
+    "standard": "17.1.2"
+  },
+  "type": "module",
+  "eslintConfig": {
+    "extends": "standard"
   }
 }

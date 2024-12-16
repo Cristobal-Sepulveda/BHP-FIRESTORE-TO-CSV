@@ -1,8 +1,8 @@
-const express = require("express");
-const { generateAndSendCsv } = require("../controllers/controller");
+import { Router } from 'express'
+import generateAndSendCsv from '../controllers/controller.js'
 
-const router = express.Router();
+const router = Router()
 
-router.get("/generateAndSendCsv", generateAndSendCsv);
+router.get('/generateAndSendCsv', generateAndSendCsv)
 
-module.exports = router;
+export default router

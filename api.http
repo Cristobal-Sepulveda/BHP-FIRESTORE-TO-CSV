@@ -1,0 +1,5 @@
+### Main page
+GET http://localhost:8000/
+
+### Generate report
+GET http://localhost:8000/generateAndSendCsv
