@@ -1,8 +1,6 @@
 import { Router } from 'express'
 import generateAndSendCsv from '../controllers/controller.js'
 
-const router = Router()
+export const generateAndSendCsvRouter = Router()
 
-router.get('/generateAndSendCsv', generateAndSendCsv)
-
-export default router
+generateAndSendCsvRouter.get('/generateAndSendCsv', generateAndSendCsv)

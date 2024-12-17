@@ -1,21 +1,17 @@
 import { createTransport } from 'nodemailer'
-import firebaseAdmin from '../config/firebaseConfiguration.js'
-import { writeFileSync } from 'node:fs'
-import { join, dirname } from 'path'
-import { fileURLToPath } from 'url'
+// import { writeFileSync } from 'node:fs'
+// import { join, dirname } from 'path'
+// import { fileURLToPath } from 'url'
 import { validateQuerySchema } from './schemas.js'
-
-const firestoreGCP = firebaseAdmin.firestore()
 
 async function generateAndSendCsv (req, res) {
   try {
     const { email, date } = req.query
     const queryValidation = validateQuerySchema(req.query)
     if (!queryValidation.success) return res.status(400).send(queryValidation.error)
-    await prepareCsvRows(csvRows, date)
-    const csvContent = convertToCsv(csvRows)
-    await saveCSVInResources(csvContent)
-    await sendEmail(email, csvContent)
+    const csv = await getCsv(date)
+    // await saveCSVInResources(csv)
+    await sendEmail(email, csv)
     res.status(200).send('Su reporte ha sido generado y enviado al email ingresado, porfavor, espere.')
   } catch (error) {
     console.log(`Server error: ${error}`)
@@ -23,10 +19,10 @@ async function generateAndSendCsv (req, res) {
   }
 }
 
-async function prepareCsvRows (csvRows, date) {
+async function getCsv (date) {
   const csvRows = []
-  const collectionName = 'Users'
   const snapshot = await firestoreGCP.collection(collectionName).get()
+
   for (const doc of snapshot.docs) {
     const subcollections = await doc.ref.listCollections()
     if (subcollections.length === 0) continue
@@ -35,11 +31,9 @@ async function prepareCsvRows (csvRows, date) {
     const userLocationData = await userLocationRegistry.get()
 
     for (const subDoc of userLocationData.docs) {
-      console.log(`subDoc: ${subDoc}`)
       const [, month, year] = subDoc.id.split('-')
       const subDocDate = `${month}/${year}`
       const formattedDate = date.replace('-', '/')
-      console.log('docDate: ', subDocDate, 'dateReceived: ', formattedDate)
       if (subDocDate !== formattedDate) continue
 
       const subDocData = subDoc.data()
@@ -59,22 +53,10 @@ async function prepareCsvRows (csvRows, date) {
       }
     }
   }
-}
 
-const convertToCsv = (rows) => {
-  const header = [
-    'fecha',
-    'leader',
-    'team',
-    'latitude',
-    'longitude',
-    'hourOfRegistry',
-    'internetStatusOnline'
-  ]
-  const csvRows = [header, ...rows]
-  return csvRows
-    .map((row) => row.map((value) => `"${value}"`).join(';'))
-    .join('\n')
+  const header = ['fecha', 'leader', 'team', 'latitude', 'longitude', 'hourOfRegistry', 'internetStatusOnline']
+  const rows = [header, ...csvRows]
+  return rows.map((row) => row.map((value) => `"${value}"`).join(';')).join('\n')
 }
 
 async function sendEmail (emailToReceiveTheReport, fileContent) {
@@ -113,11 +95,11 @@ async function sendEmail (emailToReceiveTheReport, fileContent) {
   })
 }
 
-async function saveCSVInResources (csvContent) {
-  const __filename = fileURLToPath(import.meta.url)
-  const __dirname = dirname(__filename)
-  const filePath = join(__dirname, 'reporte.csv')
-  writeFileSync(filePath, csvContent, 'utf8')
-}
+// async function saveCSVInResources (csvContent) {
+//   const __filename = fileURLToPath(import.meta.url)
+//   const __dirname = dirname(__filename)
+//   const filePath = join(__dirname, 'reporte.csv')
+//   writeFileSync(filePath, csvContent, 'utf8')
+// }
 
 export default generateAndSendCsv
