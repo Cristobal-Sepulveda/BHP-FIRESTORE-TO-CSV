@@ -1,5 +1,5 @@
 ### Main page
-GET http://localhost:8000/
+GET http://localhost:8080/
 
 ### Generate report
-GET http://localhost:8000/generateAndSendCsv?email=cristobal.sepulveda@usach.cl&date=11-2024
+GET http://localhost:8080/generateAndSendCsv?email=cristobal.sepulveda@usach.cl&date=11-2024
